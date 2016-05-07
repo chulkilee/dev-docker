@@ -2,5 +2,30 @@ smtp:
   container_name: smtp
   image: mailhog/mailhog:latest
   ports:
-    - 1025:1025
-    - 8025:8025
+    - 8025
+  environment:
+    - VIRTUAL_HOST=mailhog-ui.test
+    - VIRTUAL_PORT=8025
+
+nginx-proxy:
+  container_name: nginx-proxy
+  image: jwilder/nginx-proxy
+  ports:
+    - 80:80
+    - 443:443
+  volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+    - ./certs:/etc/nginx/certs:ro
+
+dnsmasq:
+  container_name: dnsmasq
+  image: andyshinn/dnsmasq:latest
+  entrypoint: /dnsmasq/entrypoint.sh
+  command: $DOCKER_HOST
+  volumes:
+    - ./dnsmasq:/dnsmasq:ro
+  ports:
+    - 53:53
+    - 53:53/udp
+  cap_add:
+    - NET_ADMIN
