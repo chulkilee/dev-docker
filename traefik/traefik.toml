@@ -1,0 +1,28 @@
+# https://docs.traefik.io/toml/
+logLevel = "INFO"
+defaultEntryPoints = ["http", "https"]
+
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+
+  [entryPoints.http.redirect]
+  entryPoint = "https"
+
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      CertFile = "/etc/certs/test.crt"
+      KeyFile = "/etc/certs/test.key"
+
+[retry]
+attemps = 3
+
+[web]
+address = ":8080"
+
+[consulCatalog]
+endpoint = "consul:8500"
+domain = "test"
+filename = "/etc/traefik/consul_catalog.tmpl"

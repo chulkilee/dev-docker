@@ -1,21 +1,49 @@
 smtp:
   container_name: smtp
   image: mailhog/mailhog:latest
-  ports:
-    - 8025
   environment:
-    - VIRTUAL_HOST=mailhog-ui.test
-    - VIRTUAL_PORT=8025
+    - SERVICE_1025_NAME=smtp
+    - SERVICE_1025_TAG=traefik.enable=false
+    - SERVICE_8025_NAME=mailhog-ui
 
-nginx-proxy:
-  container_name: nginx-proxy
-  image: jwilder/nginx-proxy
+consul:
+  container_name: consul
+  image: consul:latest
+  command: consul agent -dev -dc=local -node=docker-machine -client=0.0.0.0 -bootstrap -log-level=INFO
+  environment:
+    - SERVICE_8300_IGNORE=true
+    - SERVICE_8301_IGNORE=true
+    - SERVICE_8302_IGNORE=true
+    - SERVICE_8400_IGNORE=true
+    - SERVICE_8500_NAME=consul-http
+    - SERVICE_8600_IGNORE=true
+
+registrator:
+  container_name: registrator
+  image: gliderlabs/registrator:latest
+  links:
+    - consul
+  command: -internal consul://consul:8500
+  volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+
+traefik:
+  container_name: traefik
+  image: containous/traefik:latest
+  links:
+    - consul
   ports:
     - 80:80
     - 443:443
+    - 8080
   volumes:
-    - /var/run/docker.sock:/tmp/docker.sock:ro
-    - ./certs:/etc/nginx/certs:ro
+    - ./traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+    - ./traefik/consul_catalog.tmpl:/etc/traefik/consul_catalog.tmpl:ro
+    - ./certs:/etc/certs:ro
+  environment:
+    - SERVICE_80_IGNORE=true
+    - SERVICE_443_IGNORE=true
+    - SERVICE_8080_NAME=traefik-dashboard
 
 dnsmasq:
   container_name: dnsmasq
@@ -24,8 +52,12 @@ dnsmasq:
   command: $DOCKER_HOST
   volumes:
     - ./dnsmasq:/dnsmasq:ro
+  links:
+    - consul
   ports:
     - 53:53
     - 53:53/udp
   cap_add:
     - NET_ADMIN
+  environment:
+    - SERVICE_NAME=dnsmasq

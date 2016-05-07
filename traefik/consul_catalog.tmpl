@@ -1,0 +1,42 @@
+# https://raw.githubusercontent.com/containous/traefik/master/templates/consul_catalog.tmpl
+[backends]
+{{range $index, $node := .Nodes}}
+  {{if ne (getAttribute "enable" $node.Service.Tags "true") "false"}}
+    [backends.backend-{{getBackend $node}}.servers.{{getBackendName $node $index}}]
+      url = "{{getAttribute "protocol" $node.Service.Tags "http"}}://{{getBackendAddress $node}}:{{$node.Service.Port}}"
+      {{$weight := getAttribute "backend.weight" $node.Service.Tags ""}}
+      {{with $weight}}
+        weight = {{$weight}}
+      {{end}}
+    {{end}}
+{{end}}
+
+{{range .Services}}
+  {{$service := .ServiceName}}
+  {{$circuitBreaker := getAttribute "backend.circuitbreaker" .Attributes ""}}
+  {{with $circuitBreaker}}
+  [backends.backend-{{$service}}.circuitbreaker]
+    expression = "{{$circuitBreaker}}"
+  {{end}}
+
+  {{$loadBalancer := getAttribute "backend.loadbalancer" .Attributes ""}}
+  {{with $loadBalancer}}
+  [backends.backend-{{$service}}.loadbalancer]
+    method = "{{$loadBalancer}}"
+  {{end}}
+{{end}}
+
+[frontends]
+{{range .Services}}
+  [frontends.frontend-{{.ServiceName}}]
+  backend = "backend-{{.ServiceName}}"
+  passHostHeader = {{getAttribute "frontend.passHostHeader" .Attributes "true"}}
+  {{$entryPoints := getAttribute "frontend.entrypoints" .Attributes ""}}
+  {{with $entryPoints}}
+    entrypoints = [{{range getEntryPoints $entryPoints}}
+      "{{.}}",
+    {{end}}]
+  {{end}}
+  [frontends.frontend-{{.ServiceName}}.routes.route-host-{{.ServiceName}}]
+    rule = "{{getFrontendRule .}}"
+{{end}}

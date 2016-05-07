@@ -5,8 +5,8 @@ Configuration for local development using docker.
 ## Components
 
 - DNS server: [dnsmasq](http://www.thekelleys.org.uk/dnsmasq/doc.html) [![](https://imagelayers.io/badge/andyshinn/dnsmasq:latest.svg)](https://imagelayers.io/?images=andyshinn/dnsmasq:latest 'Get your own badge on imagelayers.io')
-- HTTP reverse proxy: [jwilder/nginx-proxy](https://github.com/jwilder/nginx-proxy) [![](https://imagelayers.io/badge/jwilder/nginx-proxy:latest.svg)](https://imagelayers.io/?images=jwilder/nginx-proxy:latest 'Get your own badge on imagelayers.io')
-- Service discovery: [legacy docker container link](https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/)
+- HTTP reverse proxy: [traefik](https://github.com/containous/traefik) [![](https://imagelayers.io/badge/containous/traefik:latest.svg)](https://imagelayers.io/?images=containous/traefik:latest 'Get your own badge on imagelayers.io')
+- Service discovery: [consul](https://github.com/hashicorp/consul) [![](https://imagelayers.io/badge/consul:latest.svg)](https://imagelayers.io/?images=consul:latest 'Get your own badge on imagelayers.io') and [registrator](https://github.com/gliderlabs/registrator) [![](https://imagelayers.io/badge/gliderlabs/registrator:latest.svg)](https://imagelayers.io/?images=gliderlabs/registrator:latest 'Get your own badge on imagelayers.io')
 - SMTP server and UI: [mailhog](https://github.com/mailhog/MailHog) [![](https://imagelayers.io/badge/mailhog/mailhog:latest.svg)](https://imagelayers.io/?images=mailhog/mailhog:latest 'Get your own badge on imagelayers.io')
 
 ## Setting up
@@ -44,22 +44,32 @@ docker-compose up
 
 Check out default services:
 
+- traefik dashboard: https:///traefik-dashboard.test
+- consul dashboard: https://consul-http.test
 - mailhog ui: https://mailhog-ui.test
 
 ## Features
 
 ### Service discovery inside docker containers
 
+All docker containers will be detected and added to consul by registrator.
+
 ```sh
+# use docker link
 docker run --rm -it --link smtp alpine:3.3 ping -c 1 smtp
+
+# use consul
+docker run --rm -it alpine:3.3 ping -c 1 smtp.service.consul
 ```
 
 ### HTTP reverse proxy
 
-All containers having `VIRTUAL_HOST` environment variable set will be registered to HTTP reverse proxy at `[VIRTUAL_HOST].test`.
+All consul services will be registered to HTTP reverse proxy at `[servicename](-[port]).test` unless it has service tag `traefik.enabled=false`.
 
 ```sh
-docker run --rm -e VIRTUAL_HOST=nginx.test nginx
+docker run --rm -e SERVICE_NAME=nginx -e SERVICE_443_IGNORE=true nginx
+
+curl -k https://consul-http.test/v1/catalog/service/nginx-80
 ```
 
 ## Recommended convention

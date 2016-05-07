@@ -7,6 +7,9 @@ else
   docker_host_ip=$(echo $DOCKER_HOST | awk -F '//|:' '{print $3}')
 fi
 
+consul_ip=$(ping -c 1 consul | head -1 | awk '{print $3}' | grep -o '[0-9.]*')
+
 exec dnsmasq -k \
   --log-queries --log-facility=- \
-  --address=/test/$docker_host_ip
+  --address=/test/$docker_host_ip \
+  --server=/consul/$consul_ip#8600
