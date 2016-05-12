@@ -17,6 +17,7 @@ Configuration for local development using docker.
 - docker
   - docker-machine with [Virtualbox](https://www.virtualbox.org/)
   - Docker for Mac
+  - [codekitchen/dinghy](https://github.com/codekitchen/dinghy)
 
 For docker-compose and docker-machine, you can install [Docker Toolbox](https://www.docker.com/products/docker-toolbox) or from homebrew (`brew install docker-machine docker-compose`)
 
@@ -31,6 +32,20 @@ Then run `eval $(docker-machine env default)` to set your environment.
 **Docker for Mac**
 
 Run the Docker.app
+
+**dinghy**
+
+```yaml
+# ~/.dinghy/preferences.yml
+---
+:preferences:
+  :create:
+    provider: virtualbox
+  :machine_name: default
+  :proxy_disabled: true
+  :fsevents_disabled: false
+  :dinghy_domain: test
+```
 
 ### Configure DNS resolver on host
 
@@ -118,7 +133,6 @@ postgres:
 
 ## See also
 
-- [codekitchen/dinghy](https://github.com/codekitchen/dinghy)
 - [Development with Docker Compose](http://howtocookmicroservices.com/docker-compose/)
 - [Docker, Rails, & Docker Compose together in your development workflow](http://blog.carbonfive.com/2015/03/17/docker-rails-docker-compose-together-in-your-development-workflow/)
 
